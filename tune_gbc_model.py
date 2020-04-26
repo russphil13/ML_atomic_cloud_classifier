@@ -1,10 +1,8 @@
-from custom.pgsql import close_connection, open_connection
 from custom.model_development import load_datasets, make_datasets
 from custom.model_development import sort_metric_results
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from sklearn.preprocessing import MaxAbsScaler
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score, precision_score
 from sklearn.metrics import recall_score, make_scorer
@@ -35,33 +33,37 @@ dir_model_main = ('/home/bob/development/ml_algorithms/atomic_cloud/'
 
 path_model_id = Path(dir_model_main, f'num_ex_{num_ex[0]}_seed_{seed}')
 
-max_abs_scaler_L = MaxAbsScaler()
-
-#Tune using training images of left-side clouds.
+#Tune using training set of left-side clouds.
 make_datasets(class_names, datasets_dict, path_images_left, path_model_id, seed)
 
 X_L, X_test_L, y_L, y_test_L = load_datasets(path_model_id,
                                              path_images_left)
-X_scl_L = max_abs_scaler_L.fit_transform(X_L)
-X_test_scl_L = max_abs_scaler_L.transform(X_test_L)
+
+_, scale_L, _ = getstats_fromstream(path_model_id, path_images_left)
+scale_rnd_L = np.around(scale_L)
+X_scl_L = X_L / scale_rnd_L
+X_test_scl_L = X_test_L / scale_rnd_L
 
 X_train_scl_L, X_eval_scl_L, y_train_L, y_eval_L = train_test_split(
     X_scl_L, y_L, train_size=0.8, random_state=123)
 
-#Tune with images of right-side clouds.
+#Tune using training set of right-side clouds.
 #make_datasets(class_names, datasets_dict, path_images_right, path_model_id, seed)
 #
 #X_R, X_test_R, y_train_R, y_R = load_datasets(path_model_id,
 #                                              path_images_right)
 #
-#X_train_scl_R = max_abs_scaler_R.fit_transform(X_train_R)
-#X_test_scl_R = max_abs_scaler_R.transform(X_test_R)
+#_, scale_R, _ = getstats_fromstream(path_model_id, path_images_right)
+#scale_rnd_R = np.around(scale_R)
+#X_scl_R = X_R / scale_rnd_R
+#X_test_scl_R = X_test_R / scale_rnd_R
 
 early_stopping_rounds = 20
 eval_set = [(X_eval_scl_L, y_eval_L)]
 fixed_params = {'n_estimators': 500,
                 'random_state': 10,
                 'verbosity': 0}
+
 #Tuning stages.
 
 #Stage 1 - Search for learning_rate
