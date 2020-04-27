@@ -11,9 +11,9 @@ This is a project for teaching myself to use popular Python ML libraries. Simula
  - scikit-learn 0.22.1
  - XGBoost 1.0.2
 
-##Usage
-###Tuning hyper-parameters
+## Usage
+### Tuning hyper-parameters
 Use script tune\_(model-type)\_model.py to find the optimal hyper-parameters.
 
-###Predictions on atomic clouds.
+### Predictions on atomic clouds.
 Use the script (model-type)\_binary\_classify.py to train the model using the optimal hyper-parameters and get the predictions on the atomic cloud dataset. The standard analysis of counting pixels is plotted against the analysis using the binary classifier.
