@@ -1,5 +1,5 @@
+from custom.model_development import display_results, getstats_fromstream
 from custom.model_development import load_datasets, make_datasets
-from custom.model_development import sort_metric_results
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
@@ -57,12 +57,6 @@ X_train_scl_L, X_eval_scl_L, y_train_L, y_eval_L = train_test_split(
 #scale_rnd_R = np.around(scale_R)
 #X_scl_R = X_R / scale_rnd_R
 #X_test_scl_R = X_test_R / scale_rnd_R
-
-early_stopping_rounds = 20
-eval_set = [(X_eval_scl_L, y_eval_L)]
-fixed_params = {'n_estimators': 500,
-                'random_state': 10,
-                'verbosity': 0}
 
 #Tuning stages.
 
@@ -139,6 +133,12 @@ var_params = {'colsample_bytree': 0.35,
 learning_rates = [i / 10000 for i in range(5, 16)]
 params_grid = [{'learning_rate': learning_rates}]
 
+early_stopping_rounds = 20
+eval_set = [(X_eval_scl_L, y_eval_L)]
+fixed_params = {'n_estimators': 500,
+                'random_state': 10,
+                'verbosity': 0}
+
 estimator = XGBClassifier(**fixed_params, **var_params)
 
 crossval = RepeatedStratifiedKFold(n_splits=6, n_repeats=3, random_state=3)
@@ -153,12 +153,17 @@ metrics = {'accuracy': make_scorer(accuracy_score),
 print(f'# Tuning hyper-parameters')
 print()
 
-model_search = GridSearchCV(estimator, params_grid, cv=crossval,
-                            scoring=metrics, refit=False)
+search_params = {'estimator': estimator,
+                 'cv': crossval,
+                 'scoring': metrics,
+                 'refit': False}
 
-#model_search = RandomizedSearchCV(estimator, param_dists,
-#                                  n_iter=n_iter, cv=crossval,
-#                                  scoring=metrics, refit=False)
+model_search = GridSearchCV(**search_params,
+                            param_grid=params_grid)
+
+#model_search = RandomizedSearchCV(**search_params,
+#                                  param_distributions=param_dists,
+#                                  n_iter=n_iter)
 
 #Fit model with left-side clouds.
 model_search.fit(X_train_scl_L, y_train_L, eval_set=eval_set,
@@ -170,27 +175,12 @@ model_search.fit(X_train_scl_L, y_train_L, eval_set=eval_set,
 #                 eval_metric='auc', early_stopping_rounds=20,
 #                 verbose=False)
 
-print("Grid scores by metric on development set:")
-print()
+#print("Grid scores by metric on development set:")
+#print()
 
 results = model_search.cv_results_
-means = (results[f'mean_test_{key}'] for key in metrics.keys())
-stds = (results[f'std_test_{key}'] for key in metrics.keys())
+display_results(results, metrics)
 
-metrics_results_list = ([m ,s, results['params']]
-                        for m, s in zip(means, stds))
-
-metrics_params_results = {k:v for k, v
-                          in zip(metrics.keys(), metrics_results_list)}
-
-for key, value in metrics_params_results.items():
-    results_sort_desc = sort_metric_results(value)
-    print(f'Results for {key} metric:')
-    print()
-    for _, params, std, mean in results_sort_desc:
-        print(f"{mean:0.3f} +/- {std:0.3f} for {params!r}")
-    print()
-   
 # Run this to check performance on the test set.
 #model_L_params = {'colsample_bytree': 0.35,
 #                  'gamma': 0.1,
