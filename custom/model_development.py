@@ -3,6 +3,7 @@ from custom.spe import get_analysis_results
 import numpy as np
 from numpy.random import default_rng
 from pathlib import Path
+import pandas as pd
 
 def classify_function_analysis(pred_L, pred_R):
     """Use classifer prediction to update analysis results.
@@ -46,21 +47,35 @@ def display_results(results, metrics):
             metric function as values.
     """
 
-    means = (results[f'mean_test_{k}'] for k in metrics.keys())
-    stds = (results[f'std_test_{k}'] for k in metrics.keys())
-    metrics_results = ([m, s, results['params']]
-                       for m, s in zip(means, stds))
+    param_combs = results['params']
+    param_keys = param_combs[0].keys()
+    param_dict = {k: [comb[k] for comb in param_combs]
+                  for k in param_keys}
 
-    results_bymetric = {
-        k:v for k, v in zip(metrics.keys(), metrics_results)}
+    df_metric_result = {k: pd.DataFrame(
+        {'Metric mean': results[f'mean_test_{k}'],
+        'Std. dev.': results[f'std_test_{k}'],
+        **param_dict})
+        for k in metrics.keys()}
 
-    for k, v in results_bymetric.items():
-        sorted_results = sort_results(v)
+#    metrics_results = ([m, s, results['params']]
+#                       for m, s in zip(means, stds))
+#
+#    results_bymetric = {
+#        k:v for k, v in zip(metrics.keys(), metrics_results)}
+
+    for k, v in df_metric_result.items():
         print(f'Results for {k} metric:')
         print()
-        for _, params, std, mean in sorted_results:
-            print(f'{mean:0.03f} +/- {std:0.03f} for {params!r}')
+        print(v.sort_values(by=['Metric mean'], ascending=False))
         print()
+#    for k, v in results_bymetric.items():
+#        sorted_results = sort_results(v)
+#        print(f'Results for {k} metric:')
+#        print()
+#        for _, params, std, mean in sorted_results:
+#            print(f'{mean:0.03f} +/- {std:0.03f} for {params!r}')
+#        print()
 
 def get_classify_num(pred):
     """Multiplicative factor to determined atom number.
