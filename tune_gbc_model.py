@@ -11,6 +11,8 @@ from sklearn.model_selection import RepeatedStratifiedKFold, train_test_split
 import xgboost as xgb
 from xgboost.sklearn import XGBClassifier
 
+# I added a comment.
+
 #set types and number of examples from each class in each set
 set_types = ['training', 'test']
 num_ex = [260, 64]
